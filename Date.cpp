@@ -1,4 +1,19 @@
-﻿#include <iostream>
+#include <iostream>
+
+struct WrongDayException
+{
+    int day;
+};
+
+struct WrongMonthException
+{
+    int month;
+};
+
+struct WrongYearException
+{
+    int year;
+};
 
 class Date
 {
@@ -6,59 +21,6 @@ private:
     int year;
     int month;
     int day;
-    void NormalizeDate()
-    {
-        if (month != 12)
-        {
-            year += month / 12;
-            month %= 12;
-        }
-
-        if (month < 0)
-        {
-            month = abs(12 + month);
-            year--;
-        }
-        
-        int daysInMonth[] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-        
-        if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
-            daysInMonth[2] = 29;
-        }
-
-        while (day > daysInMonth[month])
-        {
-            day -= daysInMonth[month];
-            
-            month++;
-
-            if (month > 12)
-            {
-                year += month / 12;
-                if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
-                    daysInMonth[2] = 29;
-                }
-                month %= 12;
-            }
-        }
-
-        while (day <= 0)
-        {
-            month--;
-
-            if (month < 1)
-            {
-                year --;
-                if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
-                    daysInMonth[2] = 29;
-                }
-                month = 12;
-            }
-
-            day += daysInMonth[month];
-        }
-
-    }
 public:
     Date(int day, int month, int year)
     {
@@ -66,16 +28,41 @@ public:
         this->year = year; 
         this->month = month;
         
-        NormalizeDate();
+        int daysInMonth[] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+        if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
+            daysInMonth[2] = 29;
+        }
+
+        if (day > daysInMonth[month] || day <= 0)
+        {
+            throw WrongDayException(day);
+        }
+
+        if (month > 12 || month <= 0)
+        {
+            throw WrongMonthException(month);
+        }
+
+        if (year <= 0)
+        {
+            throw WrongYearException(year);
+        }
+
     }
 
     Date(int day)
     {
         this->day = day;
-        month = 0;
+        month = 1;
         year = 1;
 
-        NormalizeDate();
+        int daysInMonth[] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+        if (day > daysInMonth[month] || day <= 0)
+        {
+            throw WrongDayException(day);
+        }
     }
 
     int GetYear()const
@@ -96,12 +83,14 @@ public:
     Date operator+ (int d) const 
     {
         int newDay = day + d;
+        
         return Date(newDay, month, year);
     }
     
     Date operator- (int d) const
     {
         int newDay = day - d;
+       
         return Date(newDay, month, year);
     }
 
@@ -109,8 +98,8 @@ public:
     {
         day += d;
 
-        NormalizeDate();
-
+        Date(day, month, year);
+        
         return *this;
     }
    
@@ -126,13 +115,15 @@ std::ostream& operator << (std::ostream& out, const Date& d)
 
 std::istream& operator >> (std::istream& in, Date& date) 
 {
+    std::cin.exceptions(std::istream::failbit);
+
     int y, m, d;
     char c;
     
     in >> d >> c;
     in >> m >> c;
     in >> y;
-    
+
     date = Date(d, m, y);
 
     return in;
@@ -142,11 +133,42 @@ std::istream& operator >> (std::istream& in, Date& date)
 
 int main()
 {
-    Date date(100);
-    std::cin >> date;
-    //date.operator+=(30);
-    //std::cout << date << std::endl;
-    //date = date - 30;
-    /*date = date + 30;*/
-    std::cout << date << std::endl;
+    try {
+        Date date(10,9,2005);
+       /* date.operator+=(30);*/
+       /* date = date + 25;*/
+        /*date = date - 30;*/
+       /* std::cin >> date;*/
+        /*Date date1(-100);*/
+    }
+
+    catch (const WrongDayException& d) {
+        std::cerr << "Wrong day" << std::endl;
+        return 1;
+    }
+
+    catch (const WrongMonthException& m) {
+        std::cerr << "Wrong month" << std::endl;
+        return 1;
+    }
+
+    catch (const WrongYearException& y) {
+        std::cerr << "Wrong year" << std::endl;
+        return 1;
+    }
+
+    catch (const std::istream::failure& ex)
+    {
+        std::cerr << "Data could not be read " << ex.what() << "\n";
+        return 2;
+    }
+
+    catch (...)
+    {
+        std::cerr << "other failure " << "\n";
+        return -1;
+    }
+
+
+    return 0;
 }
